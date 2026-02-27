@@ -1,7 +1,8 @@
 import cv2
 
-# Use the libcamera default device
-cap = cv2.VideoCapture(0, cv2.CAP_V4L2)  # Use V4L2 backend
+# GStreamer pipeline for libcamera
+pipeline = "libcamerasrc ! videoconvert ! appsink"
+cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
 if not cap.isOpened():
     print("Cannot open camera")
@@ -11,8 +12,5 @@ ret, frame = cap.read()
 if ret:
     cv2.imshow("Camera Test", frame)
     cv2.waitKey(0)
-else:
-    print("Failed to grab frame")
-
 cap.release()
 cv2.destroyAllWindows()
