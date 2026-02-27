@@ -9,9 +9,9 @@ import warnings
 # --- Suppress warnings ---
 warnings.filterwarnings("ignore")
 
-# --- Save folder inside home directory (permission-safe) ---
-save_folder = os.path.join(os.path.expanduser("~"), "Documents", "microsleep_sessions")
-os.makedirs(save_folder, exist_ok=True)  # creates folder if it doesn't exist
+# --- Safe folder inside home directory ---
+save_folder = os.path.join(os.path.expanduser("~"), "microsleep_sessions")
+os.makedirs(save_folder, exist_ok=True)  # create folder if missing
 
 # --- Get session label ---
 label = input("Enter label for this session (awake/microsleep): ").strip()
@@ -34,7 +34,7 @@ face_mesh = mp_face.FaceMesh(
     min_tracking_confidence=0.5
 )
 
-# --- Camera setup ---
+# --- Camera setup (libcamera pipeline) ---
 pipeline = "libcamerasrc ! videoconvert ! appsink"
 cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
@@ -93,6 +93,6 @@ while True:
 # --- Cleanup ---
 cap.release()
 cv2.destroyAllWindows()
-cv2.waitKey(1)
+cv2.waitKey(1)  # ensures window closes
 csv_file.close()
 print(f"Data saved to {csv_filename}")
