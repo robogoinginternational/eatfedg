@@ -3,16 +3,33 @@ import mediapipe as mp
 import math
 import csv
 import time
+import os
 import warnings
 
-# --- Suppress warnings for cleaner terminal ---
+# --- Suppress warnings ---
 warnings.filterwarnings("ignore")
+
+# --- Create folder for sessions if it doesn't exist ---
+save_folder = "/home/pi/Documents/microsleep_sessions"
+os.makedirs(save_folder, exist_ok=True)
+
+# --- Get session label from user ---
+label = input("Enter label for this session (awake/microsleep): ").strip()
+
+# --- Create CSV file with timestamp in name ---
+timestamp_str = time.strftime("%Y%m%d_%H%M%S")
+csv_filename = os.path.join(save_folder, f"{label}_{timestamp_str}.csv")
+csv_file = open(csv_filename, "w", newline="")
+csv_writer = csv.writer(csv_file)
+csv_writer.writerow(["timestamp","ear_left","ear_right","head_pitch","label"])
+
+print(f"CSV will be saved to: {csv_filename}")
 
 # --- MediaPipe FaceMesh setup ---
 mp_face = mp.solutions.face_mesh
 face_mesh = mp_face.FaceMesh(
     max_num_faces=1,
-    refine_landmarks=False,  # skip iris
+    refine_landmarks=False,
     min_detection_confidence=0.5,
     min_tracking_confidence=0.5
 )
@@ -38,18 +55,9 @@ def calculate_pitch(landmarks, chin_idx=152, forehead_idx=10):
     pitch = math.atan2(chin[1] - forehead[1], chin[2] - forehead[2])
     return math.degrees(pitch)
 
-# --- CSV setup ---
-csv_filename = "microsleep_data.csv"
-csv_file = open(csv_filename, "w", newline="")
-csv_writer = csv.writer(csv_file)
-csv_writer.writerow(["timestamp", "ear_left", "ear_right", "head_pitch", "label"])
-
-# --- Get label from user ---
-label = input("Enter label for this session (awake/microsleep): ")
-
+# --- Main loop ---
 print("Starting data collection... Press ESC to stop.")
 
-# --- Main loop ---
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -60,10 +68,8 @@ while True:
 
     if results.multi_face_landmarks:
         landmarks = results.multi_face_landmarks[0].landmark
-        # convert normalized landmarks to 3D tuples
         landmarks = [(l.x, l.y, l.z) for l in landmarks]
 
-        # Eye indices from MediaPipe FaceMesh
         left_eye = [33, 160, 158, 133, 153, 144]
         right_eye = [362, 385, 387, 263, 373, 380]
 
@@ -74,18 +80,20 @@ while True:
         timestamp = time.time()
         csv_writer.writerow([timestamp, ear_left, ear_right, head_pitch, label])
 
-        # Optional: display values on frame
+        # Display values on frame (optional)
         cv2.putText(frame, f"EAR L:{ear_left:.2f} R:{ear_right:.2f}", (10,20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
         cv2.putText(frame, f"Pitch:{head_pitch:.1f}", (10,40),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
 
     cv2.imshow("Microsleep Capture", frame)
-    if cv2.waitKey(1) & 0xFF == 27:  # ESC key
+    key = cv2.waitKey(1)
+    if key == 27:  # ESC key
         break
 
 # --- Cleanup ---
 cap.release()
 cv2.destroyAllWindows()
+cv2.waitKey(1)  # ensures window closes on Pi
 csv_file.close()
 print(f"Data saved to {csv_filename}")
