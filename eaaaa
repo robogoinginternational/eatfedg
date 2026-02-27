@@ -9,14 +9,14 @@ import warnings
 # --- Suppress warnings ---
 warnings.filterwarnings("ignore")
 
-# --- Create folder for sessions if it doesn't exist ---
-save_folder = "/home/pi/Documents/microsleep_sessions"
-os.makedirs(save_folder, exist_ok=True)
+# --- Save folder inside home directory (permission-safe) ---
+save_folder = os.path.join(os.path.expanduser("~"), "Documents", "microsleep_sessions")
+os.makedirs(save_folder, exist_ok=True)  # creates folder if it doesn't exist
 
-# --- Get session label from user ---
+# --- Get session label ---
 label = input("Enter label for this session (awake/microsleep): ").strip()
 
-# --- Create CSV file with timestamp in name ---
+# --- Create CSV filename with timestamp ---
 timestamp_str = time.strftime("%Y%m%d_%H%M%S")
 csv_filename = os.path.join(save_folder, f"{label}_{timestamp_str}.csv")
 csv_file = open(csv_filename, "w", newline="")
@@ -34,7 +34,7 @@ face_mesh = mp_face.FaceMesh(
     min_tracking_confidence=0.5
 )
 
-# --- Camera setup using working libcamera pipeline ---
+# --- Camera setup ---
 pipeline = "libcamerasrc ! videoconvert ! appsink"
 cap = cv2.VideoCapture(pipeline, cv2.CAP_GSTREAMER)
 
@@ -45,7 +45,6 @@ if not cap.isOpened():
 # --- Helper functions ---
 def calculate_ear(landmarks, eye_indices):
     p = [landmarks[i] for i in eye_indices]
-    # EAR formula
     ear = (math.dist(p[1], p[5]) + math.dist(p[2], p[4])) / (2.0 * math.dist(p[0], p[3]))
     return ear
 
@@ -80,7 +79,7 @@ while True:
         timestamp = time.time()
         csv_writer.writerow([timestamp, ear_left, ear_right, head_pitch, label])
 
-        # Display values on frame (optional)
+        # Display values on frame
         cv2.putText(frame, f"EAR L:{ear_left:.2f} R:{ear_right:.2f}", (10,20),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 1)
         cv2.putText(frame, f"Pitch:{head_pitch:.1f}", (10,40),
@@ -94,6 +93,6 @@ while True:
 # --- Cleanup ---
 cap.release()
 cv2.destroyAllWindows()
-cv2.waitKey(1)  # ensures window closes on Pi
+cv2.waitKey(1)
 csv_file.close()
 print(f"Data saved to {csv_filename}")
