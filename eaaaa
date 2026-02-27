@@ -1,0 +1,5 @@
+import cv2
+cap = cv2.VideoCapture("libcamerasrc ! videoconvert ! appsink", cv2.CAP_FFMPEG)
+ret, frame = cap.read()
+print(ret)
+cap.release()
