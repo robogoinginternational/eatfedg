@@ -1,6 +1,19 @@
 import cv2
 
-cap = cv2.VideoCapture("libcamerasrc ! videoconvert ! appsink", cv2.CAP_FFMPEG)
+cap = cv2.VideoCapture("libcamerasrc ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
 ret, frame = cap.read()
 print(ret)
+if ret:
+    cv2.imshow("Test", frame)
+    cv2.waitKey(0)
 cap.release()
+cv2.destroyAllWindows()import cv2
+
+cap = cv2.VideoCapture("libcamerasrc ! videoconvert ! appsink", cv2.CAP_GSTREAMER)
+ret, frame = cap.read()
+print(ret)
+if ret:
+    cv2.imshow("Test", frame)
+    cv2.waitKey(0)
+cap.release()
+cv2.destroyAllWindows()
